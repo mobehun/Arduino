@@ -25,15 +25,7 @@ void setup() {
   sensors.begin(); // Print a message to the LCD.
   int deviceCount=sensors.getDeviceCount(); /*Testing on startup*/
   lcd.print(deviceCount);
-  display.clearDisplay();
-  
-  /*display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(0,0);
-  display.println("Kulso: ");
-  display.display();
   delay(1000);
-  display.clearDisplay();*/
 }
 
 void loop() {
@@ -46,8 +38,8 @@ void loop() {
   lcd.setCursor(0,1); // Inside temperature No.2
   lcd.print("TMP2: "); lcd.print(sensors.getTempCByIndex(2));
   lcd.setCursor(12,1); lcd.print("C");
-  */
-  /*lcd.setCursor(0,0); // Outside temperature
+  
+  lcd.setCursor(0,0); // Outside temperature
   float temp=sensors.getTempCByIndex(0);
   lcd.print("Kulso: ");
   if(temp-(int)temp<0.5) lcd.print((int)temp);
@@ -61,9 +53,9 @@ void loop() {
   else lcd.print((int)tempA+1);
   lcd.setCursor(10,1);
   lcd.print("C");
-  lcd.setCursor(0,3);*/
+  lcd.setCursor(0,3);
   
-  /*int deviceCount = sensors.getDeviceCount();
+  int deviceCount = sensors.getDeviceCount();
   lcd.print(deviceCount);*/
 
   display.setTextSize(1);
