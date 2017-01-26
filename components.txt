@@ -1,7 +1,7 @@
 *-----------Szoba automatika-----------*
 Arduino UNO (Clone)
 DS18B20 TMPSensor x 3 module
-20x4 LCD Display (Blue) -> Replacing: 0.96" I2C OLED (Blue)
+20x4 LCD Display (Blue)
 Project Box (100*60*25)
 Jumper wires (120pcs)
 10K Potentiometer
