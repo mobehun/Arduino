@@ -36,6 +36,13 @@ void timeWrite(){
   lcd.print(ido.minute());
   delay(2000);
   lcd.clear();
+  bState=digitalRead(buttonPin);
+  if(bState!=lastBState){
+    delay(500);
+    if(bState==HIGH){
+      dateWrite();
+    }
+  }
 
 }
 
@@ -52,11 +59,11 @@ void dateWrite(){
   lcd.clear();
   bState=digitalRead(buttonPin);
   if(bState!=lastBState){
+    delay(500);
     if(bState==HIGH){
       tempWrite();
     }
   }
-  delay(100);
 }
 
 void tempWrite(){
@@ -78,11 +85,11 @@ void tempWrite(){
   lcd.clear();
   bState=digitalRead(buttonPin);
   if(bState!=lastBState){
+    delay(500);
     if(bState==HIGH){
       timeWrite();
     }
   }
-  delay(100);
 }
 
 void loop() {
@@ -91,11 +98,11 @@ void loop() {
   timeWrite();
   bState=digitalRead(buttonPin);
   if(bState!=lastBState){
+    delay(500);
     if(bState==HIGH){
       dateWrite();
     }
   }
-  delay(100);
   
 
   lastBState=bState;
