@@ -30,10 +30,13 @@ void setup() {
 void timeWrite(){
   DateTime ido = rtc.now();
   lcd.print("Time: ");
-  lcd.setCursor(6,1);
+  lcd.setCursor(6,0);
   lcd.print(ido.hour());
   lcd.print(':');
   lcd.print(ido.minute());
+  delay(2000);
+  lcd.clear();
+
 }
 
 void dateWrite(){
@@ -45,6 +48,15 @@ void dateWrite(){
   lcd.print(ido.month());
   lcd.print('/');
   lcd.print(ido.day());
+  delay(2000);
+  lcd.clear();
+  bState=digitalRead(buttonPin);
+  if(bState!=lastBState){
+    if(bState==HIGH){
+      tempWrite();
+    }
+  }
+  delay(100);
 }
 
 void tempWrite(){
@@ -62,52 +74,31 @@ void tempWrite(){
   temp = ((sensors.getTempCByIndex(1)+sensors.getTempCByIndex(2))/2);
   if(temp-(int)temp<0.5) lcd.print((int)temp);
   else lcd.print((int)temp+1); lcd.setCursor(10+6,1); lcd.print((char)223); lcd.print("C");
+  delay(2000);
+  lcd.clear();
+  bState=digitalRead(buttonPin);
+  if(bState!=lastBState){
+    if(bState==HIGH){
+      timeWrite();
+    }
+  }
+  delay(100);
 }
 
 void loop() {
   sensors.requestTemperatures(); // Send the command to get temperatures
-  bState = digitalRead(buttonPin);
 
+  timeWrite();
+  bState=digitalRead(buttonPin);
   if(bState!=lastBState){
     if(bState==HIGH){
-      counter++;
-    }
-  }
-  delay(50);
-  counter%=3;
-  switch(counter){
-    case 0:{
-      timeWrite();
-      delay(2000);
-      lcd.clear();
-      if(bState!=lastBState){
-        if(bState==HIGH){
-          dateWrite();
-        }
-      }
-    }
-    case 1:{
       dateWrite();
-      delay(2000);
-      lcd.clear();
-      if(bState!=lastBState){
-        if(bState==HIGH){
-          tempWrite();
-        }
-      }
-    }
-    case 2:{
-      tempWrite();
-      delay(2000);
-      lcd.clear();
-      if(bState!=lastBState){
-        if(bState==HIGH){
-          timeWrite();
-        }
-      }
     }
   }
+  delay(100);
+  
 
+  lastBState=bState;
 
   
   /*
