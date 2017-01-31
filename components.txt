@@ -1,12 +1,16 @@
 *-----------Szoba automatika-----------*
 Arduino UNO (Clone)
 DS18B20 TMPSensor x 3 module
-20x4 LCD Display (Blue)
+20x4 LCD Display (Blue) -> ILI9341 240x320 2.4" SPI TFT LCD Screen
 Project Box (100*60*25)
 Jumper wires (120pcs)
 10K Potentiometer
+SN754410ONE Half-H IC x 2
+Light Dependant Resistor
 
 *-----------Beléptető rendszer-----------*
+Arduino NANO (Clone)
+RC522 RFID
 
 *-----------OBS-----------*
 Arduino NANO (Clone)
