@@ -8,6 +8,7 @@
 #include <Adafruit_ILI9341.h>
 #include <Adafruit_STMPE610.h>
 #include <SPI.h>
+#include <Stepper.h>
 
 
 #define ONE_WIRE_BUS 9
@@ -21,13 +22,13 @@ Adafruit_STMPE610 ts = Adafruit_STMPE610(STMPE_CS);
 #define TFT_DC 9
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 
+const int stepsPerRevolution=200; // change this to fit the number of steps per revolution for your motor
+
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 LiquidCrystal lcd(5, 7, 10, 11, 12, 13);
 RTC_DS1307 rtc;
-
-int sensorPin=A0;
-int sensorValue;
+Stepper myStepper(stepsPerRevolution,2,3,4,5); //H-Bridge 2,7,10,15 pins
 
 void dateWrite(){
   tft.fillScreen(ILI9341_BLACK);
@@ -58,6 +59,82 @@ void tempWrite(){
   else tft.print((int)temp+1); tft.setCursor(140,135); tft.print((char)223); tft.print("C");
 }
 
+void setBlinders(){
+
+  bool manualMode = false;
+  int sensorReading=analogRead(A0); // LDR data pin connected to A0
+  Serial.println("Light level: ");
+  Serial.println(sensorReading);
+  tft.fillScreen(ILI9341_BLACK);
+  tft.setCursor(40,120);
+  tft.print("Current light level: ");
+  tft.print(sensorReading);
+
+  tft.setCursor(30,180);
+  tft.println("Manual mode: ");
+  if(manualMode){
+    tft.println("ON");
+  }
+  else{
+    tft.println("OFF");
+    if(sensorReading>=700){   //This SHOULD automatically lower the blinders!!
+      sensorReading=analogRead(A1); //10K Pot data pin connected to A1
+      int motorSpeed=map(sensorReading,0,1023,0,100); //Mapping it to range 0-100
+      if(motorSpeed>0){
+        myStepper.setSpeed(motorSpeed);
+        myStepper.step(stepsPerRevolution/100); //Step 1/100 of a revolution
+      }
+    }
+  }
+
+  
+  if(!ts.bufferEmpty()){ //This SHOULD manually lower the blinders!!
+    TS_Point p=ts.getPoint(); //Retrieve a point
+    p.x=map(p.x,TS_MINY,TS_MAXY,0,tft.height());
+    p.y=map(p.y,TS_MINX,TS_MAXX,0,tft.width());
+    int y=tft.height()-p.x;
+    int x=p.y;
+
+    if(x>160 && x<190){
+      if(y>160 && y<180){
+        Serial.println("Manual mode hit");
+        manualMode=true;
+      }
+    }
+    
+    if(manualMode){
+      if(x>50 && x<110){
+        if(y>30 && y<50){
+          Serial.println("Plus sign hit");
+          plusBlinders();
+        }
+      }
+      if(x>50 && x<110){
+        if(y>30 && y<50){
+          Serial.println("Minus sign hit");
+          minusBlinders();
+        }
+      }
+    }
+  }
+}
+void plusBlinders(){
+  
+}
+
+void minusBlinders(){
+  
+}
+
+void setHeathers(){
+  int sensorReading=analogRead(A1); //Pot data pin connected to A1
+  int motorSpeed=map(sensorReading,0,1023,0,100); //Mapping it to range 0-100
+  if(motorSpeed>0){
+    myStepper.setSpeed(motorSpeed);
+    myStepper.step(stepsPerRevolution/100); //Step 1/100 of a revolution
+  }
+}
+
 void setup() {
   Serial.begin(9600);
   lcd.begin(20, 4); // set up the LCD's number of columns and rows:
@@ -83,6 +160,12 @@ void loop() {
   tft.setCursor(180,45);
   tft.println("Temperature");
 
+  tft.setCursor(45,130);
+  tft.println("Blinders");
+
+  tft.setCursor(200,130);
+  tft.println("Heathing");
+
   tft.setCursor(240,210);
   tft.println(ido.hour());
   tft.println(":");
@@ -101,18 +184,24 @@ void loop() {
         dateWrite();
       }
     }
-    if(x){
+    if(x>175 && x<305){
       if(y>30 && y<50){
         Serial.println("Temperature hit!");
         tempWrite();
       }
     }
+    if(x>40 && x<120){
+      if(y>110 && y<130){
+        Serial.println("Blinders hit!");
+        setBlinders();
+      }
+    }
+    if(x>200 && x<255){
+      if(y>110 && y<130){
+        Serial.println("Heathing hit!");
+        setHeathers();
+      }
+    }
   }
 
-/*  lcd.clear();
-  sensorValue=analogRead(sensorPin); //NOT YET IMPLEMENTED!
-  lcd.print("Light level: ");
-  lcd.print(sensorValue);*/
-
-  
 }
