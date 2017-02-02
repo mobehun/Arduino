@@ -1,0 +1,118 @@
+#include <LiquidCrystal.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <Wire.h>
+#include "RTClib.h"
+
+#include <Adafruit_GFX.h>
+#include <Adafruit_ILI9341.h>
+#include <Adafruit_STMPE610.h>
+#include <SPI.h>
+
+
+#define ONE_WIRE_BUS 9
+#define TS_MINX 150     // This is calibration data for the raw touch data to the screen coordinates
+#define TS_MINY 130
+#define TS_MAXX 3800
+#define TS_MAXY 4000
+#define STMPE_CS 8
+Adafruit_STMPE610 ts = Adafruit_STMPE610(STMPE_CS);
+#define TFT_CS 10
+#define TFT_DC 9
+Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
+
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+LiquidCrystal lcd(5, 7, 10, 11, 12, 13);
+RTC_DS1307 rtc;
+
+int sensorPin=A0;
+int sensorValue;
+
+void dateWrite(){
+  tft.fillScreen(ILI9341_BLACK);
+  DateTime ido = rtc.now();
+  tft.setCursor(120,125);
+  tft.print(ido.year());
+  tft.print('/');
+  tft.print(ido.month());
+  tft.print('/');
+  tft.print(ido.day());
+}
+
+void tempWrite(){
+  tft.fillScreen(ILI9341_BLACK);
+  sensors.requestTemperatures(); // Send the command to get temperatures
+  tft.setCursor(120,125);
+  tft.print("Kulso: ");
+  float temp=sensors.getTempCByIndex(0);
+  if(temp-(int)temp<0.5) tft.print((int)temp);
+  else tft.print((int)temp+1);
+  if(temp<-9){ tft.setCursor(140,125);tft.print((char)223); tft.print("C"); } //(char)223=='°'
+  else { tft.setCursor(140,125);tft.print((char)223); tft.print("C"); }
+  
+  tft.setCursor(120,135); //Average of inside temperature
+  tft.print("Belso: ");
+  temp = ((sensors.getTempCByIndex(1)+sensors.getTempCByIndex(2))/2);
+  if(temp-(int)temp<0.5) tft.print((int)temp);
+  else tft.print((int)temp+1); tft.setCursor(140,135); tft.print((char)223); tft.print("C");
+}
+
+void setup() {
+  Serial.begin(9600);
+  lcd.begin(20, 4); // set up the LCD's number of columns and rows:
+  sensors.begin(); // Print a message to the LCD.
+  rtc.begin();
+  //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));//Needs to run only one time!
+  
+  tft.begin();
+  if(!ts.begin()) Serial.println("Unable to start touchscreen!");
+  else Serial.println("Touchscreen started.");
+  tft.fillScreen(ILI9341_BLACK);
+  tft.setRotation(1);
+}
+
+void loop() {
+
+  DateTime ido = rtc.now();
+  tft.setTextColor(ILI9341_WHITE);
+  tft.setTextSize(2);
+  tft.setCursor(55,45);
+  tft.println("Date");
+
+  tft.setCursor(180,45);
+  tft.println("Temperature");
+
+  tft.setCursor(240,210);
+  tft.println(ido.hour());
+  tft.println(":");
+  tft.println(ido.minute());
+
+  if(!ts.bufferEmpty()){
+    TS_Point p=ts.getPoint(); //Retrieve a point
+    p.x=map(p.x,TS_MINY,TS_MAXY,0,tft.height());
+    p.y=map(p.y,TS_MINX,TS_MAXX,0,tft.width());
+    int y=tft.height()-p.x;
+    int x=p.y;
+
+    if(x>50 && x<110){
+      if(y>30 && y<50){
+        Serial.println("Date hit!");
+        dateWrite();
+      }
+    }
+    if(x){
+      if(y>30 && y<50){
+        Serial.println("Temperature hit!");
+        tempWrite();
+      }
+    }
+  }
+
+/*  lcd.clear();
+  sensorValue=analogRead(sensorPin); //NOT YET IMPLEMENTED!
+  lcd.print("Light level: ");
+  lcd.print(sensorValue);*/
+
+  
+}
