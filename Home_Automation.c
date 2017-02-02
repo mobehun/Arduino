@@ -39,6 +39,7 @@ void dateWrite(){
   tft.print(ido.month());
   tft.print('/');
   tft.print(ido.day());
+  delay(10000);
 }
 
 void tempWrite(){
@@ -57,10 +58,30 @@ void tempWrite(){
   temp = ((sensors.getTempCByIndex(1)+sensors.getTempCByIndex(2))/2);
   if(temp-(int)temp<0.5) tft.print((int)temp);
   else tft.print((int)temp+1); tft.setCursor(140,135); tft.print((char)223); tft.print("C");
+  delay(10000);
+}
+
+void plusTurn(){
+  int sensorReading=analogRead(A1);
+  int motorSpeed=map(sensorReading,0,1023,0,100);
+  if(motorSpeed>0){
+    myStepper.setSpeed(motorSpeed);
+    myStepper.step(stepsPerRevolution/100);
+    }
+  delay(500);
+}
+
+void minusTurn(){
+  int sensorReading=analogRead(A1);
+  int motorSpeed=map(sensorReading,0,1023,0,100);
+  if(motorSpeed>0){
+    myStepper.setSpeed(motorSpeed);
+    myStepper.step(-stepsPerRevolution/100);
+    }
+  delay(500);
 }
 
 void setBlinders(){
-
   bool manualMode = false;
   int sensorReading=analogRead(A0); // LDR data pin connected to A0
   Serial.println("Light level: ");
@@ -72,10 +93,7 @@ void setBlinders(){
 
   tft.setCursor(30,180);
   tft.println("Manual mode: ");
-  if(manualMode){
-    tft.println("ON");
-  }
-  else{
+  if(!manualMode){
     tft.println("OFF");
     if(sensorReading>=700){   //This SHOULD automatically lower the blinders!!
       sensorReading=analogRead(A1); //10K Pot data pin connected to A1
@@ -86,7 +104,7 @@ void setBlinders(){
       }
     }
   }
-
+  else tft.println("ON");
   
   if(!ts.bufferEmpty()){ //This SHOULD manually lower the blinders!!
     TS_Point p=ts.getPoint(); //Retrieve a point
@@ -106,33 +124,51 @@ void setBlinders(){
       if(x>50 && x<110){
         if(y>30 && y<50){
           Serial.println("Plus sign hit");
-          plusBlinders();
+          plusTurn();
         }
       }
       if(x>50 && x<110){
         if(y>30 && y<50){
           Serial.println("Minus sign hit");
-          minusBlinders();
+          minusTurn();
         }
       }
     }
   }
-}
-void plusBlinders(){
-  
-}
-
-void minusBlinders(){
-  
+  delay(10000);
 }
 
 void setHeathers(){
-  int sensorReading=analogRead(A1); //Pot data pin connected to A1
-  int motorSpeed=map(sensorReading,0,1023,0,100); //Mapping it to range 0-100
-  if(motorSpeed>0){
-    myStepper.setSpeed(motorSpeed);
-    myStepper.step(stepsPerRevolution/100); //Step 1/100 of a revolution
+  sensors.requestTemperatures();
+  tft.setCursor(40,115);
+  tft.println("Current temperature: ");
+
+  float temp=sensors.getTempCByIndex(0);
+  if(temp-(int)temp<0.5) tft.println((int)temp);
+  else tft.print((int)temp+1);
+  if(temp<-9){ tft.setCursor(140,125);tft.print((char)223); tft.print("C"); } //(char)223=='°'
+  else { tft.setCursor(140,125);tft.print((char)223); tft.print("C"); }
+  
+  if(!ts.bufferEmpty()){ //This SHOULD manually lower the blinders!!
+    TS_Point p=ts.getPoint(); //Retrieve a point
+    p.x=map(p.x,TS_MINY,TS_MAXY,0,tft.height());
+    p.y=map(p.y,TS_MINX,TS_MAXX,0,tft.width());
+    int y=tft.height()-p.x;
+    int x=p.y;
+    if(x>65 && x<85){
+      if(y>175 && y<185){
+        Serial.println("Plus sign hit");
+        plusTurn();
+      }
+    }
+    if(x>245 && x<260){
+      if(y>175 && y<185){
+        Serial.println("Minus sign hit");
+        minusTurn();
+      }
+    }
   }
+  
 }
 
 void setup() {
@@ -203,5 +239,5 @@ void loop() {
       }
     }
   }
-
+  delay(2000);
 }
