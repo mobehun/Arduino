@@ -1,4 +1,4 @@
-#include <LiquidCrystal.h>
+#include <LiquidCrystal_I2C.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <Wire.h>
@@ -8,7 +8,7 @@
 
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
-LiquidCrystal lcd(5, 7, 10, 11, 12, 13);
+LiquidCrystal_I2C lcd(0x27, 20, 4);
 RTC_DS1307 rtc;
 
 int sensorPin=A0;
@@ -20,7 +20,7 @@ int lastBState=0;
 
 void setup() {
   Serial.begin(9600);
-  lcd.begin(20, 4); // set up the LCD's number of columns and rows:
+  lcd.begin(); // set up the LCD's number of columns and rows:
   sensors.begin(); // Print a message to the LCD.
   rtc.begin();
   //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));//Needs to run only one time!
@@ -36,6 +36,7 @@ void timeWrite(){
   lcd.print(ido.minute());
   delay(2000);
   lcd.clear();
+  
   bState=digitalRead(buttonPin);
   if(bState!=lastBState){
     delay(500);
@@ -57,6 +58,7 @@ void dateWrite(){
   lcd.print(ido.day());
   delay(2000);
   lcd.clear();
+  
   bState=digitalRead(buttonPin);
   if(bState!=lastBState){
     delay(500);
@@ -83,6 +85,7 @@ void tempWrite(){
   else lcd.print((int)temp+1); lcd.setCursor(10+6,1); lcd.print((char)223); lcd.print("C");
   delay(2000);
   lcd.clear();
+  
   bState=digitalRead(buttonPin);
   if(bState!=lastBState){
     delay(500);
@@ -104,7 +107,6 @@ void loop() {
     }
   }
   
-
   lastBState=bState;
 
   
