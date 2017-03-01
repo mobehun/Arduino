@@ -1,4 +1,3 @@
-#include <LiquidCrystal.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <Wire.h>
@@ -26,7 +25,6 @@ const int stepsPerRevolution=200; // change this to fit the number of steps per 
 
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
-LiquidCrystal lcd(5, 7, 10, 11, 12, 13);
 RTC_DS1307 rtc;
 Stepper myStepper(stepsPerRevolution,2,3,4,5); //H-Bridge 2,7,10,15 pins
 
@@ -39,7 +37,25 @@ void dateWrite(){
   tft.print(ido.month());
   tft.print('/');
   tft.print(ido.day());
-  delay(10000);
+
+  tft.setCursor(4,236);
+  tft.print("Vissza");
+  
+  if(!ts.bufferEmpty()){
+    TS_Point p=ts.getPoint(); //Retrieve a point
+    p.x=map(p.x,TS_MINY,TS_MAXY,0,tft.height());
+    p.y=map(p.y,TS_MINX,TS_MAXX,0,tft.width());
+    int y=tft.height()-p.x;
+    int x=p.y;
+
+    if(x>4 && x<60){
+      if(y>220 && y<240){
+        Serial.println("Back hit!");
+        loop();
+      }
+    }
+  }
+  dateWrite();
 }
 
 void tempWrite(){
@@ -58,7 +74,24 @@ void tempWrite(){
   temp = ((sensors.getTempCByIndex(1)+sensors.getTempCByIndex(2))/2);
   if(temp-(int)temp<0.5) tft.print((int)temp);
   else tft.print((int)temp+1); tft.setCursor(140,135); tft.print((char)223); tft.print("C");
-  delay(10000);
+
+  //print BACK button here:
+  
+  if(!ts.bufferEmpty()){
+    TS_Point p=ts.getPoint(); //Retrieve a point
+    p.x=map(p.x,TS_MINY,TS_MAXY,0,tft.height());
+    p.y=map(p.y,TS_MINX,TS_MAXX,0,tft.width());
+    int y=tft.height()-p.x;
+    int x=p.y;
+
+    if(x>160 && x<190){                                     //Area needs to be calculated
+      if(y>160 && y<180){
+        Serial.println("Back hit!");
+        loop();
+      }
+    }
+  }
+  tempWrite();
 }
 
 void plusTurn(){
@@ -71,13 +104,33 @@ void plusTurn(){
   delay(500);
 }
 
-void minusTurn(){
+void plusTurn(int turns){
   int sensorReading=analogRead(A1);
   int motorSpeed=map(sensorReading,0,1023,0,100);
   if(motorSpeed>0){
     myStepper.setSpeed(motorSpeed);
-    myStepper.step(-stepsPerRevolution/100);
+    myStepper.step(stepsPerRevolution*turns);
     }
+  delay(500);
+}
+
+void minusTurn(){
+  int sensorReading=analogRead(A1); //10K Pot data pin connected to A1
+  int motorSpeed=map(sensorReading,0,1023,0,100); //Mapping it to range 0-100
+  if(motorSpeed>0){
+    myStepper.setSpeed(motorSpeed);
+    myStepper.step(-stepsPerRevolution/100); //Step 1/100 of a revolution
+  }
+  delay(500);
+}
+
+void minusTurn(int turns){
+  int sensorReading=analogRead(A1); //10K Pot data pin connected to A1
+  int motorSpeed=map(sensorReading,0,1023,0,100); //Mapping it to range 0-100
+  if(motorSpeed>0){
+    myStepper.setSpeed(motorSpeed);
+    myStepper.step(-stepsPerRevolution*turns); //Step 1/100 of a revolution
+  }
   delay(500);
 }
 
@@ -86,6 +139,7 @@ void setBlinders(){
   int sensorReading=analogRead(A0); // LDR data pin connected to A0
   Serial.println("Light level: ");
   Serial.println(sensorReading);
+  
   tft.fillScreen(ILI9341_BLACK);
   tft.setCursor(40,120);
   tft.print("Current light level: ");
@@ -93,19 +147,7 @@ void setBlinders(){
 
   tft.setCursor(30,180);
   tft.println("Manual mode: ");
-  if(!manualMode){
-    tft.println("OFF");
-    if(sensorReading>=700){   //This SHOULD automatically lower the blinders!!
-      sensorReading=analogRead(A1); //10K Pot data pin connected to A1
-      int motorSpeed=map(sensorReading,0,1023,0,100); //Mapping it to range 0-100
-      if(motorSpeed>0){
-        myStepper.setSpeed(motorSpeed);
-        myStepper.step(stepsPerRevolution/100); //Step 1/100 of a revolution
-      }
-    }
-  }
-  else tft.println("ON");
-  
+
   if(!ts.bufferEmpty()){ //This SHOULD manually lower the blinders!!
     TS_Point p=ts.getPoint(); //Retrieve a point
     p.x=map(p.x,TS_MINY,TS_MAXY,0,tft.height());
@@ -119,6 +161,25 @@ void setBlinders(){
         manualMode=true;
       }
     }
+  }
+  
+  if(!manualMode){
+    tft.println("OFF");
+    if(sensorReading>=700)   //This SHOULD automatically lower the blinders!!
+      plusTurn(2000); //Needs to be turned multipletimes 200=1 full turn!!
+    sensorReading=analogRead(A0);
+    if(sensorReading<=200)  //This SHOULD automatically lift the blinders!!
+      minusTurn(2000); //Needs to be turned multipletimes 200=1 full turn!!
+    yield();//What does this do??
+  }
+  else tft.println("ON");
+  
+  if(!ts.bufferEmpty()){ //This SHOULD manually lower the blinders!!
+    TS_Point p=ts.getPoint(); //Retrieve a point
+    p.x=map(p.x,TS_MINY,TS_MAXY,0,tft.height());
+    p.y=map(p.y,TS_MINX,TS_MAXX,0,tft.width());
+    int y=tft.height()-p.x;
+    int x=p.y;
     
     if(manualMode){
       if(x>50 && x<110){
@@ -133,12 +194,18 @@ void setBlinders(){
           minusTurn();
         }
       }
+  }
+  if(x>50 && x<110){                                              //Area needs to be calculated
+        if(y>30 && y<50){
+          Serial.println("Back button hit");
+          loop();
+      }
     }
   }
-  delay(10000);
+  setBlinders();
 }
 
-void setHeathers(){
+void setHeaters(){
   sensors.requestTemperatures();
   tft.setCursor(40,115);
   tft.println("Current temperature: ");
@@ -149,7 +216,7 @@ void setHeathers(){
   if(temp<-9){ tft.setCursor(140,125);tft.print((char)223); tft.print("C"); } //(char)223=='°'
   else { tft.setCursor(140,125);tft.print((char)223); tft.print("C"); }
   
-  if(!ts.bufferEmpty()){ //This SHOULD manually lower the blinders!!
+  if(!ts.bufferEmpty()){
     TS_Point p=ts.getPoint(); //Retrieve a point
     p.x=map(p.x,TS_MINY,TS_MAXY,0,tft.height());
     p.y=map(p.y,TS_MINX,TS_MAXX,0,tft.width());
@@ -167,13 +234,18 @@ void setHeathers(){
         minusTurn();
       }
     }
-  }
-  
+    if(x>50 && x<110){                                              //Area needs to be calculated
+          if(y>30 && y<50){
+            Serial.println("Back button hit");
+            loop();
+        }
+      }
+    }
+  setHeaters();
 }
 
 void setup() {
   Serial.begin(9600);
-  lcd.begin(20, 4); // set up the LCD's number of columns and rows:
   sensors.begin(); // Print a message to the LCD.
   rtc.begin();
   //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));//Needs to run only one time!
@@ -186,7 +258,6 @@ void setup() {
 }
 
 void loop() {
-
   DateTime ido = rtc.now();
   tft.setTextColor(ILI9341_WHITE);
   tft.setTextSize(2);
@@ -200,7 +271,7 @@ void loop() {
   tft.println("Blinders");
 
   tft.setCursor(200,130);
-  tft.println("Heathing");
+  tft.println("Heating");
 
   tft.setCursor(240,210);
   tft.println(ido.hour());
@@ -234,8 +305,8 @@ void loop() {
     }
     if(x>200 && x<255){
       if(y>110 && y<130){
-        Serial.println("Heathing hit!");
-        setHeathers();
+        Serial.println("Heating hit!");
+        setHeaters();
       }
     }
   }
