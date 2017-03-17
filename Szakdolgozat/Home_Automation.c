@@ -9,8 +9,7 @@
 #include <SPI.h>
 #include <Stepper.h>
 
-
-#define ONE_WIRE_BUS 9
+#define ONE_WIRE_BUS 7
 #define TS_MINX 150     // This is calibration data for the raw touch data to the screen coordinates
 #define TS_MINY 130
 #define TS_MAXX 3800
@@ -29,16 +28,17 @@ RTC_DS1307 rtc;
 Stepper myStepper(stepsPerRevolution,2,3,4,5); //H-Bridge 2,7,10,15 pins
 
 void dateWrite(){
+  tft.setTextSize(2);
   tft.fillScreen(ILI9341_BLACK);
   DateTime ido = rtc.now();
-  tft.setCursor(120,125);
+  tft.setCursor(105,105);
   tft.print(ido.year());
   tft.print('/');
   tft.print(ido.month());
   tft.print('/');
   tft.print(ido.day());
 
-  tft.setCursor(4,236);
+  tft.setCursor(4,225);
   tft.print("Vissza");
   
   if(!ts.bufferEmpty()){
@@ -55,27 +55,30 @@ void dateWrite(){
       }
     }
   }
+  delay(10000);
   dateWrite();
 }
 
 void tempWrite(){
+  tft.setTextSize(2);
   tft.fillScreen(ILI9341_BLACK);
   sensors.requestTemperatures(); // Send the command to get temperatures
-  tft.setCursor(120,125);
+  tft.setCursor(105,105);
   tft.print("Kulso: ");
   float temp=sensors.getTempCByIndex(0);
   if(temp-(int)temp<0.5) tft.print((int)temp);
   else tft.print((int)temp+1);
-  if(temp<-9){ tft.setCursor(140,125);tft.print((char)223); tft.print("C"); } //(char)223=='°'
-  else { tft.setCursor(140,125);tft.print((char)223); tft.print("C"); }
+  tft.print(" C");
   
-  tft.setCursor(120,135); //Average of inside temperature
+  tft.setCursor(105,120); //Average of inside temperature
   tft.print("Belso: ");
   temp = ((sensors.getTempCByIndex(1)+sensors.getTempCByIndex(2))/2);
   if(temp-(int)temp<0.5) tft.print((int)temp);
-  else tft.print((int)temp+1); tft.setCursor(140,135); tft.print((char)223); tft.print("C");
+  else tft.print((int)temp+1);
+  tft.print(" C");
 
-  //print BACK button here:
+  tft.setCursor(4,225);
+  tft.print("Vissza");
   
   if(!ts.bufferEmpty()){
     TS_Point p=ts.getPoint(); //Retrieve a point
@@ -91,6 +94,7 @@ void tempWrite(){
       }
     }
   }
+  delay(10000);
   tempWrite();
 }
 
@@ -135,18 +139,20 @@ void minusTurn(int turns){
 }
 
 void setBlinders(){
+  
   bool manualMode = false;
   int sensorReading=analogRead(A0); // LDR data pin connected to A0
   Serial.println("Light level: ");
   Serial.println(sensorReading);
-  
+
+  tft.setTextSize(2);
   tft.fillScreen(ILI9341_BLACK);
-  tft.setCursor(40,120);
+  tft.setCursor(20,80);
   tft.print("Current light level: ");
   tft.print(sensorReading);
 
-  tft.setCursor(30,180);
-  tft.println("Manual mode: ");
+  tft.setCursor(20,100);
+  tft.print("Manual mode: ");
 
   if(!ts.bufferEmpty()){ //This SHOULD manually lower the blinders!!
     TS_Point p=ts.getPoint(); //Retrieve a point
@@ -172,7 +178,16 @@ void setBlinders(){
       minusTurn(2000); //Needs to be turned multipletimes 200=1 full turn!!
     yield();//What does this do??
   }
-  else tft.println("ON");
+  else {
+    tft.println("ON");
+    tft.setCursor(90,155);
+    tft.print("+");
+    tft.setCursor(210,155);
+    tft.print("-");
+  }
+  
+  tft.setCursor(4,225);
+  tft.print("Vissza");
   
   if(!ts.bufferEmpty()){ //This SHOULD manually lower the blinders!!
     TS_Point p=ts.getPoint(); //Retrieve a point
@@ -202,19 +217,28 @@ void setBlinders(){
       }
     }
   }
+  delay(10000);
   setBlinders();
 }
 
 void setHeaters(){
+  tft.setTextSize(2);
   sensors.requestTemperatures();
-  tft.setCursor(40,115);
-  tft.println("Current temperature: ");
-
+  tft.setCursor(50,80);
+  tft.print("Belso homerseklet: ");
+  tft.setCursor(105,100);
   float temp=sensors.getTempCByIndex(0);
-  if(temp-(int)temp<0.5) tft.println((int)temp);
-  else tft.print((int)temp+1);
-  if(temp<-9){ tft.setCursor(140,125);tft.print((char)223); tft.print("C"); } //(char)223=='°'
-  else { tft.setCursor(140,125);tft.print((char)223); tft.print("C"); }
+  if(temp-(int)temp<0.5) tft.print((int)temp);
+  else tft.println((int)temp+1);
+  tft.print(" C");
+
+  tft.setCursor(90,155);
+  tft.print("+");
+  tft.setCursor(210,155);
+  tft.print("-");
+
+  tft.setCursor(4,225);
+  tft.print("Vissza");
   
   if(!ts.bufferEmpty()){
     TS_Point p=ts.getPoint(); //Retrieve a point
@@ -261,7 +285,7 @@ void loop() {
   DateTime ido = rtc.now();
   tft.setTextColor(ILI9341_WHITE);
   tft.setTextSize(2);
-  tft.setCursor(55,45);
+  tft.setCursor(45,45);
   tft.println("Date");
 
   tft.setCursor(180,45);
@@ -270,13 +294,13 @@ void loop() {
   tft.setCursor(45,130);
   tft.println("Blinders");
 
-  tft.setCursor(200,130);
+  tft.setCursor(180,130);
   tft.println("Heating");
 
-  tft.setCursor(240,210);
-  tft.println(ido.hour());
-  tft.println(":");
-  tft.println(ido.minute());
+  tft.setCursor(180,210);
+  tft.print(ido.hour());
+  tft.print(":");
+  tft.print(ido.minute());
 
   if(!ts.bufferEmpty()){
     TS_Point p=ts.getPoint(); //Retrieve a point
