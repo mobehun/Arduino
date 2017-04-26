@@ -7,6 +7,7 @@
 #include <MCUFRIEND_kbv.h>
 #include "Adafruit_GFX.h"
 #include <TouchScreen.h>
+#include "Pictures.h" //Holds my arts
 
 #define ONE_WIRE_BUS 30
 #define LDR A8
@@ -21,12 +22,116 @@ RTC_DS1307 rtc;
 Stepper myStepper(200,22,23,24,25); //H-Bridge 2,7,10,15 pins
 Stepper myOtherStepper(200,26,27,28,29);
 
+extern const unsigned char cloud[];
+extern const unsigned char moon[];
+extern const unsigned char sun[];
+extern const unsigned char sun_low[];
+extern const unsigned char therm0[];
+extern const unsigned char therm25[];
+extern const unsigned char therm50[];
+extern const unsigned char therm75[];
+extern const unsigned char therm100[];
+extern const unsigned char moon_FQ[];
+extern const unsigned char moon_F[];
+extern const unsigned char moon_LQ[];
+extern const unsigned char moon_N[];
+extern const unsigned char moon_WC[];
+extern const unsigned char moon_WG[];
+extern const unsigned char moon_WaC[];
+extern const unsigned char moon_WaG[];
+
+String nextNewM = "";
+const char* newNextNewMoon=(const char*) nextNewM.c_str();
+
+void drawMoon(){
+  DateTime now=rtc.now();
+  int moonPhase=moonphase();
+  switch (moonPhase){
+    case 0: tft.drawBitmap(0, 233,  moon_F, 26, 26, 0xFFFF); break;
+    case 1: tft.drawBitmap(0, 233,  moon_WaG, 26, 26, 0xFFFF); break;
+    case 2: tft.drawBitmap(0, 233,  moon_LQ, 26, 26, 0xFFFF); break;
+    case 3: tft.drawBitmap(0, 233,  moon_WaC, 26, 26, 0xFFFF); break;
+    case 4: tft.drawBitmap(0, 233,  moon_N, 26, 26, 0xFFFF); break;
+    case 5: tft.drawBitmap(0, 233,  moon_WaxC, 26, 26, 0xFFFF); break;
+    case 6: tft.drawBitmap(0, 233,  moon_FQ, 26, 26, 0xFFFF); break;
+    case 7: tft.drawBitmap(0, 233,  moon_WaxG, 26, 26, 0xFFFF); break;
+  }
+}
+
+int moonphase(){
+  DateTime now=rtc.now();
+  double julianD=0;
+  double elapsedD=0;
+  int b=0;
+  julianD=julian(now.year(),now.month(),now.day());
+  julianD=int(julianD-2244116.75);
+  julianD/=29.53;
+  b=julianD;
+  julianD-=b;
+  elapsedD=julianD*29.53;
+  nextNewM=String((int(29.53-elapsedD)));
+  b=julianD*8+0.5;
+  b=b&7;
+  return b;
+}
+
+double julian(int year, int month, int day){
+  int Month, Year;
+  double a,b,c;
+  double j;
+  Year=year-int((12-month)/10);
+  Month=month+9;
+  if(Month>12) Month-=12;
+  a=365.25*(Year+4172);
+  b=int((30.6001*Month)+0.5);
+  c=int((((Year/100)+4)*0.75)-38);
+  j=a+b+day+59;
+  j-=c;
+  return j;
+}
+
 void dateWrite(){
+  String months[12]={"January","February","March","April","May","June","July","August","September","October","November","December"};
   tft.fillScreen(0x0000);
   tft.setTextSize(2);
+
   DateTime ido = rtc.now();
-  String cTime="Today is:"+(String)ido.year()+'/'+(String)ido.month()+'/'+(String)ido.day();
-  tft.setCursor(40,105);
+  Serial.println(ido.month());
+  if(ido.month()>=4 && ido.month()<=9){
+    if(ido.hour()>=7 && ido.hour()<=19){
+      if(analogRead(LDR)>=200) tft.drawBitmap(0, 0,  sun, 64, 64, 0xFFFF); //(x,y, name, DX, DY, color)
+      else tft.drawBitmap(0, 0,  cloud, 64, 64, 0xFFFF); //(x,y, name, DX, DY, color)
+    }
+    else tft.drawBitmap(0, 0,  moon, 64, 64, 0xFFFF); //(x,y, name, DX, DY, color)
+  }
+  else{
+    if(ido.hour()>=8 && ido.hour()<=16){
+      if(analogRead(LDR)>=200) tft.drawBitmap(0, 0,  sun, 64, 64, 0xFFFF); //(x,y, name, DX, DY, color)
+      else tft.drawBitmap(0, 0,  cloud, 64, 64, 0xFFFF); //(x,y, name, DX, DY, color)
+    }
+    else tft.drawBitmap(0, 0,  moon, 64, 64, 0xFFFF); //(x,y, name, DX, DY, color)
+  }
+
+  drawMoon();
+
+  String cTime;
+  switch ((int)ido.month()){
+    case 1: cTime=(String)ido.year()+'/'+months[0]+'/'+(String)ido.day(); break;
+    case 2: cTime=(String)ido.year()+'/'+months[1]+'/'+(String)ido.day(); break;
+    case 3: cTime=(String)ido.year()+'/'+months[2]+'/'+(String)ido.day(); break;
+    case 4: cTime=(String)ido.year()+'/'+months[3]+'/'+(String)ido.day(); break;
+    case 5: cTime=(String)ido.year()+'/'+months[4]+'/'+(String)ido.day(); break;
+    case 6: cTime=(String)ido.year()+'/'+months[5]+'/'+(String)ido.day(); break;
+    case 7: cTime=(String)ido.year()+'/'+months[6]+'/'+(String)ido.day(); break;
+    case 8: cTime=(String)ido.year()+'/'+months[7]+'/'+(String)ido.day(); break;
+    case 9: cTime=(String)ido.year()+'/'+months[8]+'/'+(String)ido.day(); break;
+    case 10: cTime=(String)ido.year()+'/'+months[9]+'/'+(String)ido.day(); break;
+    case 11: cTime=(String)ido.year()+'/'+months[10]+'/'+(String)ido.day(); break;
+    case 12: cTime=(String)ido.year()+'/'+months[11]+'/'+(String)ido.day(); break;
+  }
+  tft.setCursor(100,105);
+  tft.println("Today is:");
+  tft.setCursor(60,125);
   tft.print(cTime);
   tft.setCursor(4,225);
   tft.print("Back");
@@ -51,7 +156,6 @@ void dateWrite(){
       }
     }
   }
-  delay(10000);
   dateWrite();
 }
 
@@ -59,11 +163,19 @@ void tempWrite(){
   tft.fillScreen(0x0000);
   tft.setTextSize(2);
   sensors.requestTemperatures(); // Send the command to get temperatures
+
+  if(int(sensors.getTempCByIndex(0))<-10) tft.drawBitmap(0, 233,  therm0, 26, 26, 0xFFFF);
+  if(int(sensors.getTempCByIndex(0))>=-10 && int(sensors.getTempCByIndex(0))<-5) tft.drawBitmap(0, 233,  therm25, 26, 26, 0xFFFF);
+  if(int(sensors.getTempCByIndex(0))>=-5 && int(sensors.getTempCByIndex(0))<10) tft.drawBitmap(0, 233,  therm50, 26, 26, 0xFFFF);
+  if(int(sensors.getTempCByIndex(0))>=10 && int(sensors.getTempCByIndex(0))<30) tft.drawBitmap(0, 233,  therm75, 26, 26, 0xFFFF);
+  if(int(sensors.getTempCByIndex(0))>=30) tft.drawBitmap(0, 233,  therm100, 26, 26, 0xFFFF);
+
   tft.setCursor(85,85);
   tft.print("Outside: ");
   float temp=sensors.getTempCByIndex(0);
   if(temp-(int)temp<0.5) tft.print((int)temp);
   else tft.print((int)temp+1);
+  //drawCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color);
   tft.print(" C");
 
   tft.setCursor(85,105);
@@ -71,6 +183,7 @@ void tempWrite(){
   temp = ((sensors.getTempCByIndex(1)+sensors.getTempCByIndex(2))/2);
   if(temp-(int)temp<0.5) tft.print((int)temp);
   else tft.print((int)temp+1);
+  //drawCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color);
   tft.print(" C");
 
   int sensorReading=analogRead(LDR); // LDR data pin connected to A0
@@ -102,31 +215,30 @@ void tempWrite(){
       }
     }
   }
-  delay(10000);
   tempWrite();
 }
 
 void plusTurn(int turns){
   myStepper.setSpeed(100);
-  myStepper.step(stepsPerRevolution/100*turns);   //Step 1/100 of a revolution
+  myStepper.step(200/100*turns);
 }
 
 void minusTurn(int turns){
   myStepper.setSpeed(100);
-  myStepper.step(-stepsPerRevolution/100*turns);   //Step 1/100 of a revolution
+  myStepper.step(-200/100*turns);
 }
 
 void otherPlusTurn(int turns){
   myOtherStepper.setSpeed(100);
-  myOtherStepper.step(stepsPerRevolution/100*turns);   //Step 1/100 of a revolution
+  myOtherStepper.step(200/100*turns);
 }
 
 void otherMinusTurn(int turns){
   myOtherStepper.setSpeed(100);
-  myOtherStepper.step(-stepsPerRevolution/100*turns);   //Step 1/100 of a revolution
+  myOtherStepper.step(-200/100*turns);
 }
 
-void setBlinders(){
+void setBlinders(){ 
   tft.fillScreen(0x0000);
   DateTime ido = rtc.now();
   int sensorReading=analogRead(LDR);   // LDR data pin connected to A0
@@ -137,10 +249,12 @@ void setBlinders(){
   String out="Light level: "+(String)sensorReading+" lx";
   tft.setCursor(40,80);
   tft.print(out);
+  tft.setTextSize(3);
   tft.setCursor(90,155);
   tft.print("+");
   tft.setCursor(210,155);
   tft.print("-");
+  tft.setTextSize(2);
   tft.setCursor(4,225);
   tft.print("Back");
   
@@ -177,7 +291,6 @@ void setBlinders(){
       }
     }
   }
-  delay(10000);
   setBlinders();
 }
 
@@ -192,10 +305,12 @@ void setHeaters(){
   if(temp-(int)temp<0.5) tft.print((int)temp);
   else tft.print((int)temp+1);
   tft.print(" C");
+  tft.setTextSize(3);
   tft.setCursor(90,155);
   tft.print("+");
   tft.setCursor(210,155);
   tft.print("-");
+  tft.setTextSize(2);
   tft.setCursor(4,225);
   tft.print("Back");
   
@@ -234,13 +349,11 @@ void setHeaters(){
       }
     }
   }
-  delay(10000);
   setHeaters();
 }
 
 void setup() {
   Serial.begin(9600);
-  sensors.begin(); // Print a message to the LCD.
   rtc.begin();
   //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));//Needs to run only one time!
   
@@ -249,9 +362,9 @@ void setup() {
 }
 
 void loop() {
+  tft.invertDisplay(true);
   tft.fillScreen(0x0000);
   DateTime ido = rtc.now();
-  String cTime=(String)ido.hour()+":"+(String)ido.minute();
   tft.setTextSize(2);
   tft.setCursor(45, 45);
   tft.print("Date");
@@ -262,6 +375,13 @@ void loop() {
   tft.setCursor(180,130);
   tft.print("Heating");
   tft.setCursor(180,210);
+
+  String cTime;
+  if(ido.minute()<10){
+    String minute="0"+(String)ido.minute();
+    cTime=(String)ido.hour()+":"+minute;
+  }
+  else cTime=(String)ido.hour()+":"+(String)ido.minute();
   tft.print(cTime);
 
   int Min=ido.minute();
