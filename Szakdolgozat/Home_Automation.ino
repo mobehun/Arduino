@@ -9,7 +9,7 @@
 #include <TouchScreen.h>
 #include "Pictures.h" //Holds my arts
 
-#define ONE_WIRE_BUS 30
+#define ONE_WIRE_BUS 23
 #define LDR A8
 
 MCUFRIEND_kbv tft;
@@ -19,26 +19,26 @@ TSPoint tp;
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 RTC_DS1307 rtc;
-Stepper myStepper(200,22,23,24,25); //H-Bridge 2,7,10,15 pins
-Stepper myOtherStepper(200,26,27,28,29);
+Stepper myStepper(200,25,27,29,31); //H-Bridge 2,7,10,15 pins
+Stepper myOtherStepper(200,33,35,37,39);
 
-extern const unsigned char cloud[];
-extern const unsigned char moon[];
-extern const unsigned char sun[];
-extern const unsigned char sun_low[];
-extern const unsigned char therm0[];
-extern const unsigned char therm25[];
-extern const unsigned char therm50[];
-extern const unsigned char therm75[];
-extern const unsigned char therm100[];
-extern const unsigned char moon_FQ[];
-extern const unsigned char moon_F[];
-extern const unsigned char moon_LQ[];
-extern const unsigned char moon_N[];
-extern const unsigned char moon_WC[];
-extern const unsigned char moon_WG[];
-extern const unsigned char moon_WaC[];
-extern const unsigned char moon_WaG[];
+extern const unsigned char PROGMEM cloud[];
+extern const unsigned char PROGMEM moon[];
+extern const unsigned char PROGMEM sun[];
+extern const unsigned char PROGMEM sunLow[];
+extern const unsigned char PROGMEM thermometerZero[];
+extern const unsigned char PROGMEM thermometer25[];
+extern const unsigned char PROGMEM thermometer50[];
+extern const unsigned char PROGMEM thermometer75[];
+extern const unsigned char PROGMEM thermometer100[];
+extern const unsigned char PROGMEM moonFirstQuarter[];
+extern const unsigned char PROGMEM moonFull[];
+extern const unsigned char PROGMEM moonLastQuarter[];
+extern const unsigned char PROGMEM moonNew[];
+extern const unsigned char PROGMEM moonWaningCrescent[];
+extern const unsigned char PROGMEM moonWaningGibbous[];
+extern const unsigned char PROGMEM moonWaxingCrescent[];
+extern const unsigned char PROGMEM moonWaxingGibbous[];
 
 String nextNewM = "";
 const char* newNextNewMoon=(const char*) nextNewM.c_str();
@@ -47,14 +47,14 @@ void drawMoon(){
   DateTime now=rtc.now();
   int moonPhase=moonphase();
   switch (moonPhase){
-    case 0: tft.drawBitmap(0, 233,  moon_F, 26, 26, 0xFFFF); break;
-    case 1: tft.drawBitmap(0, 233,  moon_WaG, 26, 26, 0xFFFF); break;
-    case 2: tft.drawBitmap(0, 233,  moon_LQ, 26, 26, 0xFFFF); break;
-    case 3: tft.drawBitmap(0, 233,  moon_WaC, 26, 26, 0xFFFF); break;
-    case 4: tft.drawBitmap(0, 233,  moon_N, 26, 26, 0xFFFF); break;
-    case 5: tft.drawBitmap(0, 233,  moon_WaxC, 26, 26, 0xFFFF); break;
-    case 6: tft.drawBitmap(0, 233,  moon_FQ, 26, 26, 0xFFFF); break;
-    case 7: tft.drawBitmap(0, 233,  moon_WaxG, 26, 26, 0xFFFF); break;
+    case 0: tft.drawBitmap(293, 0,  moonFull, 24, 24, 0xFFFF); break;
+    case 1: tft.drawBitmap(293, 0,  moonWaxingGibbous, 24, 24, 0xFFFF); break;
+    case 2: tft.drawBitmap(293, 0,  moonLastQuarter, 24, 24, 0xFFFF); break;
+    case 3: tft.drawBitmap(293, 0,  moonWaxingCrescent, 26, 26, 0xFFFF); break;
+    case 4: tft.drawBitmap(293, 0,  moonNew, 24, 24, 0xFFFF); break;
+    case 5: tft.drawBitmap(293, 0,  moonWaningCrescent, 24, 24, 0xFFFF); break;
+    case 6: tft.drawBitmap(293, 0,  moonFirstQuarter,24, 24, 0xFFFF); break;
+    case 7: tft.drawBitmap(293, 0,  moonWaningGibbous, 24, 24, 0xFFFF); break;
   }
 }
 
@@ -96,22 +96,130 @@ void dateWrite(){
   tft.setTextSize(2);
 
   DateTime ido = rtc.now();
-  Serial.println(ido.month());
-  if(ido.month()>=4 && ido.month()<=9){
-    if(ido.hour()>=7 && ido.hour()<=19){
-      if(analogRead(LDR)>=200) tft.drawBitmap(0, 0,  sun, 64, 64, 0xFFFF); //(x,y, name, DX, DY, color)
-      else tft.drawBitmap(0, 0,  cloud, 64, 64, 0xFFFF); //(x,y, name, DX, DY, color)
-    }
-    else tft.drawBitmap(0, 0,  moon, 64, 64, 0xFFFF); //(x,y, name, DX, DY, color)
+  /* Need to rethink this part...
+  switch((int)ido.month()){
+  	case 1:{
+  		if((ido.hour()>=6 && ido.minute()>40)&&(ido.hour()<7)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()>=16)&&(ido.hour()>=16 && ido.minute()<45)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if(ido.hour()>=7 && ido.hour()<16){
+      		if(analogRead(LDR)>=200) tft.drawBitmap(0, 0,  sun, 48, 48, 0xFFFF); //(x,y, name, DX, DY, color)
+      		else tft.drawBitmap(0, 0,  cloud, 47, 32, 0xFFFF); //(x,y, name, DX, DY, color)
+    	}
+    	else tft.drawBitmap(0, 0,  moon, 24, 24, 0xFFFF); //(x,y, name, DX, DY, color)
+  		break;
+  		}
+  	case 2:{
+  		if(ido.hour()>=6 && (ido.hour()>=6 && ido.minute()<30)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if(ido.hour()>=17 && (ido.hour()>=17 && ido.minute()<30)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()>=6 && ido.minute()>=30) && ido.hour()<17){
+      		if(analogRead(LDR)>=200) tft.drawBitmap(0, 0,  sun, 48, 48, 0xFFFF); //(x,y, name, DX, DY, color)
+      		else tft.drawBitmap(0, 0,  cloud, 47, 32, 0xFFFF); //(x,y, name, DX, DY, color)
+    	}
+    	else tft.drawBitmap(0, 0,  moon, 24, 24, 0xFFFF); //(x,y, name, DX, DY, color)
+  		break;
+  		}
+  	case 3:{
+  		if((ido.hour()>=5 && ido.minute()>15) && (ido.hour()>=5 && ido.minute()<45)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()>=17 && ido.minute()>40) && (ido.hour()>=18 && ido.minute()<10)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()>=5 && ido.minute()>=47) && (ido.hour()<17 && ido.minute()<=40)){
+      		if(analogRead(LDR)>=200) tft.drawBitmap(0, 0,  sun, 48, 48, 0xFFFF); //(x,y, name, DX, DY, color)
+      		else tft.drawBitmap(0, 0,  cloud, 47, 32, 0xFFFF); //(x,y, name, DX, DY, color)
+    	}
+    	else tft.drawBitmap(0, 0,  moon, 24, 24, 0xFFFF); //(x,y, name, DX, DY, color)
+  		break;
+  		}
+  	case 4:{
+  		if((ido.hour()>=5 && ido.minute()>10) && (ido.hour()>=5 && ido.minute()<45)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()>=19 && ido.minute()>20) && (ido.hour()>=19 && ido.minute()<55)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()>=5 && ido.minute()>=45) && (ido.hour()<19 && ido.minute()<=20)){
+      		if(analogRead(LDR)>=200) tft.drawBitmap(0, 0,  sun, 48, 48, 0xFFFF); //(x,y, name, DX, DY, color)
+      		else tft.drawBitmap(0, 0,  cloud, 47, 32, 0xFFFF); //(x,y, name, DX, DY, color)
+    	}
+    	else tft.drawBitmap(0, 0,  moon, 24, 24, 0xFFFF); //(x,y, name, DX, DY, color)
+  		break;
+  		}
+  	case 5:{
+  		if((ido.hour()=4 && ido.minute()>15) && (ido.hour()=4 && ido.minute()<55)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()=20 && ido.minute()>5) && (ido.hour()=20 && ido.minute()<45)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()>=4 && ido.minute()>=55) && (ido.hour()<20 && ido.minute()<=5)){
+      		if(analogRead(LDR)>=200) tft.drawBitmap(0, 0,  sun, 48, 48, 0xFFFF); //(x,y, name, DX, DY, color)
+      		else tft.drawBitmap(0, 0,  cloud, 47, 32, 0xFFFF); //(x,y, name, DX, DY, color)
+    	}
+    	else tft.drawBitmap(0, 0,  moon, 24, 24, 0xFFFF); //(x,y, name, DX, DY, color)
+  		break;
+  		}
+  	case 6:{
+  		if((ido.hour()>=3 && ido.minute()>55) && (ido.hour()>=4 && ido.minute()<35)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()>=20 && ido.minute()>30) && (ido.hour()>=21 && ido.minute()<15)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()>=4 && ido.minute()>=35) && (ido.hour()<20 && ido.minute()<=30)){
+      		if(analogRead(LDR)>=200) tft.drawBitmap(0, 0,  sun, 48, 48, 0xFFFF); //(x,y, name, DX, DY, color)
+      		else tft.drawBitmap(0, 0,  cloud, 47, 32, 0xFFFF); //(x,y, name, DX, DY, color)
+    	}
+    	else tft.drawBitmap(0, 0,  moon, 24, 24, 0xFFFF); //(x,y, name, DX, DY, color)
+  		break;
+  		}
+  	case 7:{
+  		if((ido.hour()>=4 && ido.minute()>15) && (ido.hour()>=4 && ido.minute()<55)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()>=20 && ido.minute()>25) && (ido.hour()>=21 && ido.minute()<1)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()>=4 && ido.minute()>=55) && (ido.hour()<20 && ido.minute()<=25)){
+      		if(analogRead(LDR)>=200) tft.drawBitmap(0, 0,  sun, 48, 48, 0xFFFF); //(x,y, name, DX, DY, color)
+      		else tft.drawBitmap(0, 0,  cloud, 47, 32, 0xFFFF); //(x,y, name, DX, DY, color)
+    	}
+    	else tft.drawBitmap(0, 0,  moon, 24, 24, 0xFFFF); //(x,y, name, DX, DY, color)
+  		break;
+  		}
+  	case 8:{
+  		if((ido.hour()>=4 && ido.minute()>55) && (ido.hour()>=5 && ido.minute()<30)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()>=19 && ido.minute()>45) && (ido.hour()>=20 && ido.minute()<15)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()>=5 && ido.minute()>=30) && (ido.hour()<19 && ido.minute()<=45)){
+      		if(analogRead(LDR)>=200) tft.drawBitmap(0, 0,  sun, 48, 48, 0xFFFF); //(x,y, name, DX, DY, color)
+      		else tft.drawBitmap(0, 0,  cloud, 47, 32, 0xFFFF); //(x,y, name, DX, DY, color)
+    	}
+    	else tft.drawBitmap(0, 0,  moon, 24, 24, 0xFFFF); //(x,y, name, DX, DY, color)
+  		break;
+  		}
+  	case 9:{
+  		if((ido.hour()>=5 && ido.minute()>40) && (ido.hour()>=6 && ido.minute()<15)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()>=18 && ido.minute()>45) && (ido.hour()>=19 && ido.minute()<15)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()>=6 && ido.minute()>=15) && (ido.hour()<18 && ido.minute()<=45)){
+      		if(analogRead(LDR)>=200) tft.drawBitmap(0, 0,  sun, 48, 48, 0xFFFF); //(x,y, name, DX, DY, color)
+      		else tft.drawBitmap(0, 0,  cloud, 47, 32, 0xFFFF); //(x,y, name, DX, DY, color)
+    	}
+    	else tft.drawBitmap(0, 0,  moon, 24, 24, 0xFFFF); //(x,y, name, DX, DY, color)
+  		break;
+  		}
+  	case 10:{
+  		if((ido.hour()>=6 && ido.minute()>20) && (ido.hour()>=6 && ido.minute()<55)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()>=17 && ido.minute()>45) && (ido.hour()>=18 && ido.minute()<15)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()>=6 && ido.minute()>=55) && (ido.hour()<17 && ido.minute()<=45)){
+      		if(analogRead(LDR)>=200) tft.drawBitmap(0, 0,  sun, 48, 48, 0xFFFF); //(x,y, name, DX, DY, color)
+      		else tft.drawBitmap(0, 0,  cloud, 47, 32, 0xFFFF); //(x,y, name, DX, DY, color)
+    	}
+    	else tft.drawBitmap(0, 0,  moon, 24, 24, 0xFFFF); //(x,y, name, DX, DY, color)
+  		break;
+  		}
+  	case 11:{
+  		if((ido.hour()>=6 && ido.minute()>5) && (ido.hour()>=6 && ido.minute()<40)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()>=15 && ido.minute()>55) && (ido.hour()>=16 && ido.minute()<30)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()>=6 && ido.minute()>=40) && (ido.hour()<15 && ido.minute()<=55)){
+      		if(analogRead(LDR)>=200) tft.drawBitmap(0, 0,  sun, 48, 48, 0xFFFF); //(x,y, name, DX, DY, color)
+      		else tft.drawBitmap(0, 0,  cloud, 47, 32, 0xFFFF); //(x,y, name, DX, DY, color)
+    	}
+    	else tft.drawBitmap(0, 0,  moon, 24, 24, 0xFFFF); //(x,y, name, DX, DY, color)
+  		break;
+  		}
+  	case 12:{
+  		if((ido.hour()>=6 && ido.minute()>40) && (ido.hour()>=7 && ido.minute()<15)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()>=15 && ido.minute()>40) && (ido.hour()>=16 && ido.minute()<15)) tft.drawBitmap(0, 0, sunLow, 48, 36, 0xFFFF);
+  		if((ido.hour()>=7 && ido.minute()>=15) && (ido.hour()<15 && ido.minute()<=40)){
+      		if(analogRead(LDR)>=200) tft.drawBitmap(0, 0,  sun, 48, 48, 0xFFFF); //(x,y, name, DX, DY, color)
+      		else tft.drawBitmap(0, 0,  cloud, 47, 32, 0xFFFF); //(x,y, name, DX, DY, color)
+    	}
+    	else tft.drawBitmap(0, 0,  moon, 24, 24, 0xFFFF); //(x,y, name, DX, DY, color)
+  		break;
+  		}
   }
-  else{
-    if(ido.hour()>=8 && ido.hour()<=16){
-      if(analogRead(LDR)>=200) tft.drawBitmap(0, 0,  sun, 64, 64, 0xFFFF); //(x,y, name, DX, DY, color)
-      else tft.drawBitmap(0, 0,  cloud, 64, 64, 0xFFFF); //(x,y, name, DX, DY, color)
-    }
-    else tft.drawBitmap(0, 0,  moon, 64, 64, 0xFFFF); //(x,y, name, DX, DY, color)
-  }
-
+*/
   drawMoon();
 
   String cTime;
@@ -129,6 +237,7 @@ void dateWrite(){
     case 11: cTime=(String)ido.year()+'/'+months[10]+'/'+(String)ido.day(); break;
     case 12: cTime=(String)ido.year()+'/'+months[11]+'/'+(String)ido.day(); break;
   }
+  tft.fillRect(3,224,45,17,0x1E90FF);
   tft.setCursor(100,105);
   tft.println("Today is:");
   tft.setCursor(60,125);
@@ -164,18 +273,17 @@ void tempWrite(){
   tft.setTextSize(2);
   sensors.requestTemperatures(); // Send the command to get temperatures
 
-  if(int(sensors.getTempCByIndex(0))<-10) tft.drawBitmap(0, 233,  therm0, 26, 26, 0xFFFF);
-  if(int(sensors.getTempCByIndex(0))>=-10 && int(sensors.getTempCByIndex(0))<-5) tft.drawBitmap(0, 233,  therm25, 26, 26, 0xFFFF);
-  if(int(sensors.getTempCByIndex(0))>=-5 && int(sensors.getTempCByIndex(0))<10) tft.drawBitmap(0, 233,  therm50, 26, 26, 0xFFFF);
-  if(int(sensors.getTempCByIndex(0))>=10 && int(sensors.getTempCByIndex(0))<30) tft.drawBitmap(0, 233,  therm75, 26, 26, 0xFFFF);
-  if(int(sensors.getTempCByIndex(0))>=30) tft.drawBitmap(0, 233,  therm100, 26, 26, 0xFFFF);
+  if(int(sensors.getTempCByIndex(0))<-10) tft.drawBitmap(293, 0,  thermometerZero, 16, 36, 0xFFFF);
+  if(int(sensors.getTempCByIndex(0))>=-10 && int(sensors.getTempCByIndex(0))<-5) tft.drawBitmap(293, 0,  thermometer25, 16, 36, 0xFFFF);
+  if(int(sensors.getTempCByIndex(0))>=-5 && int(sensors.getTempCByIndex(0))<10) tft.drawBitmap(293, 0,  thermometer50, 16, 36, 0xFFFF);
+  if(int(sensors.getTempCByIndex(0))>=10 && int(sensors.getTempCByIndex(0))<30) tft.drawBitmap(293, 0,  thermometer75, 16, 36, 0xFFFF);
+  if(int(sensors.getTempCByIndex(0))>=30) tft.drawBitmap(293, 0,  thermometer100, 16, 36, 0xFFFF);
 
   tft.setCursor(85,85);
   tft.print("Outside: ");
   float temp=sensors.getTempCByIndex(0);
   if(temp-(int)temp<0.5) tft.print((int)temp);
   else tft.print((int)temp+1);
-  //drawCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color);
   tft.print(" C");
 
   tft.setCursor(85,105);
@@ -183,13 +291,13 @@ void tempWrite(){
   temp = ((sensors.getTempCByIndex(1)+sensors.getTempCByIndex(2))/2);
   if(temp-(int)temp<0.5) tft.print((int)temp);
   else tft.print((int)temp+1);
-  //drawCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color);
   tft.print(" C");
 
   int sensorReading=analogRead(LDR); // LDR data pin connected to A0
   String out="Light level "+(String)sensorReading+" lx";
   tft.setCursor(60,125);
   tft.print(out);
+  tft.fillRect(3,224,45,17,0x1E90FF);
   tft.setCursor(4,225);
   tft.print("Back");
 
@@ -251,10 +359,13 @@ void setBlinders(){
   tft.print(out);
   tft.setTextSize(3);
   tft.setCursor(90,155);
+  tft.fillRect(87,156,20,20,0x1E90FF);
   tft.print("+");
   tft.setCursor(210,155);
+  tft.fillRect(207,156,20,20,0x1E90FF);
   tft.print("-");
   tft.setTextSize(2);
+  tft.fillRect(3,224,45,17,0x1E90FF);
   tft.setCursor(4,225);
   tft.print("Back");
   
@@ -307,10 +418,13 @@ void setHeaters(){
   tft.print(" C");
   tft.setTextSize(3);
   tft.setCursor(90,155);
+  tft.fillRect(87,156,20,20,0x1E90FF);
   tft.print("+");
   tft.setCursor(210,155);
+  tft.fillRect(207,156,20,20,0x1E90FF);
   tft.print("-");
   tft.setTextSize(2);
+  tft.fillRect(3,224,45,18,0x1E90FF);
   tft.setCursor(4,225);
   tft.print("Back");
   
@@ -366,6 +480,10 @@ void loop() {
   tft.fillScreen(0x0000);
   DateTime ido = rtc.now();
   tft.setTextSize(2);
+  tft.fillRect(43,43,50,18,0x1E90FF); //fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
+  tft.fillRect(178,43,133,18,0x1E90FF);
+  tft.fillRect(43,129,99,18,0x1E90FF);
+  tft.fillRect(178,129,86,18,0x1E90FF);
   tft.setCursor(45, 45);
   tft.print("Date");
   tft.setCursor(180,45);
