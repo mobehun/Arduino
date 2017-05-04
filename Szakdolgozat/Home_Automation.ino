@@ -19,7 +19,7 @@ TSPoint tp;
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 RTC_DS1307 rtc;
-Stepper myStepper(200,25,27,29,31); //H-Bridge 2,7,10,15 pins
+Stepper myStepper(200,25,27,29,31);
 Stepper myOtherStepper(200,33,35,37,39);
 
 extern const unsigned char PROGMEM cloud[];
@@ -98,11 +98,12 @@ void dateWrite(){
   DateTime ido = rtc.now();
   String Time;
   if(ido.minute()<10){
-    String MIN="0"+ido.minute();
+    String MIN="0"+(String)ido.minute();
     Time = (String)ido.hour()+MIN;
   }
   else Time = (String)ido.hour()+(String)ido.minute();
   int time=Time.toInt();
+  Serial.println(Time);
 
   switch((int)ido.month()){
   	case 1:{
@@ -263,9 +264,8 @@ void dateWrite(){
     pinMode(6, OUTPUT);
     pinMode(7, OUTPUT);
     if(tp.z<1000 && tp.z>20){
-      if(tp.x>820 && tp.x<890){
+      if(tp.x>815 && tp.x<890){
         if(tp.y>780 && tp.y<920){
-          Serial.println("Back hit!");
           loop();
         }
       }
@@ -277,7 +277,10 @@ void dateWrite(){
 void tempWrite(){
   tft.fillScreen(0x0000);
   tft.setTextSize(2);
-  sensors.requestTemperatures(); // Send the command to get temperatures
+  do{
+    sensors.requestTemperatures();
+  }
+  while((int)sensors.getTempCByIndex(0)==85 || (int)sensors.getTempCByIndex(1)==85 || (int)sensors.getTempCByIndex(2)==85);
 
   if(int(sensors.getTempCByIndex(0))<-10) tft.drawBitmap(293, 0,  thermometerZero, 16, 36, 0xFFFF);
   if(int(sensors.getTempCByIndex(0))>=-10 && int(sensors.getTempCByIndex(0))<-5) tft.drawBitmap(293, 0,  thermometer25, 16, 36, 0xFFFF);
@@ -321,9 +324,8 @@ void tempWrite(){
     pinMode(6, OUTPUT);
     pinMode(7, OUTPUT);
     if(tp.z<1000 && tp.z>20){
-      if(tp.x>820 && tp.x<890){
+      if(tp.x>815 && tp.x<890){
         if(tp.y>780 && tp.y<920){
-          Serial.println("Back hit!");
           loop();
         }
       }
@@ -383,26 +385,24 @@ void setBlinders(){
     if(ido.minute()>Min && (ido.second()+60)-Sec>10) val=false;
     else if(ido.second()-Sec>10) val=false;
     tp=ts.getPoint();
+    if(tp.z<1000 && tp.z>20) Serial.println(tp.y);
     pinMode(A2, OUTPUT);
     pinMode(A1, OUTPUT);
     pinMode(6, OUTPUT);
     pinMode(7, OUTPUT);
     if(tp.z<1000 && tp.z>20){
-      if(tp.x>660 && tp.x<710){
-        if(tp.y>720 && tp.y<730){
-          Serial.println("Plus sign hit");
+      if(tp.x>600 && tp.x<710){
+        if(tp.y>645 && tp.y<740){
           plusTurn(10);
         }
       }
-      if(tp.x>660 && tp.x<710){
-        if(tp.y>390 && tp.y<445){
-          Serial.println("Minus sign hit");
+      if(tp.x>600 && tp.x<710){
+        if(tp.y>645 && tp.y<740){
           minusTurn(10);
         }
       }
-      if(tp.x>820 && tp.x<890){
+      if(tp.x>815 && tp.x<890){
         if(tp.y>780 && tp.y<920){
-          Serial.println("Back hit!");
           loop();
         }
       }
@@ -451,19 +451,16 @@ void setHeaters(){
       
       if(tp.x>660 && tp.x<710){
         if(tp.y>720 && tp.y<730){
-          Serial.println("Plus sign hit");
           otherPlusTurn(10);
         }
       }
       if(tp.x>660 && tp.x<710){
         if(tp.y>390 && tp.y<445){
-          Serial.println("Minus sign hit");
           otherMinusTurn(10);
         }
       }
       if(tp.x>820 && tp.x<890){
         if(tp.y>780 && tp.y<920){
-          Serial.println("Back hit!");
           loop();
         }
       }
@@ -521,31 +518,26 @@ void loop() {
     pinMode(6, OUTPUT);
     pinMode(7, OUTPUT);
     if(tp.z<1000 && tp.z>20){
-      if(tp.x>240 && tp.x<330){
-        if(tp.y>700 && tp.y<850){
-          Serial.println("Date hit!");
+      if(tp.x>270 && tp.x<340){
+        if(tp.y>700 && tp.y<840){
           dateWrite();
         }
       }
-      if(tp.x>240 && tp.x<330){
-        if(tp.y>205 && tp.y<495){
-          Serial.println("Temperature hit!");
+      if(tp.x>270 && tp.x<340){
+        if(tp.y>140 && tp.y<490){
           tempWrite();
         }
       }
-      if(tp.x>560 && tp.x<590){
-        if(tp.y>615 && tp.y<850){
-          Serial.println("Blinders hit!");
+      if(tp.x>530 && tp.x<615){
+        if(tp.y>565 && tp.y<840){
           setBlinders();
         }
       }
-      if(tp.x>560 && tp.x<590){
-        if(tp.y>275 && tp.y<510){
-          Serial.println("Heating hit!");
+      if(tp.x>530 && tp.x<615){
+        if(tp.y>250 && tp.y<490){
           setHeaters();
         }
       }
     }
   }
-  delay(2000);
 }
